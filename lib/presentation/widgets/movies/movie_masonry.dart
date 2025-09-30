@@ -1,11 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:cinemapedia/domain/entities/movie.dart';
-import 'package:cinemapedia/presentation/widgets/movies/movie_poster_link.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+
+import 'movie_poster_link.dart';
 
 class MovieMasonry extends StatefulWidget {
   final List<Movie> movies;
-  final Future<List<Movie>> Function()? loadNextPage;
+  final VoidCallback? loadNextPage;
 
   const MovieMasonry({super.key, required this.movies, this.loadNextPage});
 
@@ -14,8 +15,6 @@ class MovieMasonry extends StatefulWidget {
 }
 
 class _MovieMasonryState extends State<MovieMasonry> {
-  bool isLastPage = false;
-  bool isLoading = false;
   final scrollController = ScrollController();
 
   @override
@@ -23,12 +22,11 @@ class _MovieMasonryState extends State<MovieMasonry> {
     super.initState();
 
     scrollController.addListener(() {
-      // if (widget.loadNextPage == null) return;
+      if (widget.loadNextPage == null) return;
 
-      // si el scroll está al final o cerca de unos 200px, aquí llamar el loadNextPage
-      if (scrollController.position.pixels + 200 >=
+      if ((scrollController.position.pixels + 100) >=
           scrollController.position.maxScrollExtent) {
-        loadNextPageMovies();
+        widget.loadNextPage!();
       }
     });
   }
@@ -36,21 +34,7 @@ class _MovieMasonryState extends State<MovieMasonry> {
   @override
   void dispose() {
     scrollController.dispose();
-
     super.dispose();
-  }
-
-  void loadNextPageMovies() async {
-    if (isLoading || isLastPage) return;
-    if (widget.loadNextPage == null) return;
-
-    isLoading = true;
-    final movies = await widget.loadNextPage!();
-    isLoading = false;
-
-    if (movies.isEmpty) {
-      isLastPage = true;
-    }
   }
 
   @override
@@ -67,7 +51,7 @@ class _MovieMasonryState extends State<MovieMasonry> {
           if (index == 1) {
             return Column(
               children: [
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 MoviePosterLink(movie: widget.movies[index]),
               ],
             );

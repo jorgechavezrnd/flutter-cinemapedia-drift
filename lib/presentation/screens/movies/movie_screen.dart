@@ -1,12 +1,12 @@
-import 'package:animate_do/animate_do.dart';
-import 'package:cinemapedia/presentation/providers/actors/actors_by_movie_provider.dart';
-import 'package:cinemapedia/presentation/providers/storage/favorite_movies_provider.dart';
-import 'package:cinemapedia/presentation/providers/storage/is_favorite_movie_provider.dart';
+import 'package:cinemapedia/config/helpers/human_formats.dart';
+import 'package:cinemapedia/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:animate_do/animate_do.dart';
 
 import 'package:cinemapedia/domain/entities/movie.dart';
-import 'package:cinemapedia/presentation/providers/movies/movie_info_provider.dart';
+
+import 'package:cinemapedia/presentation/providers/providers.dart';
 
 class MovieScreen extends ConsumerStatefulWidget {
   static const name = 'movie-screen';
@@ -33,8 +33,8 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
     final Movie? movie = ref.watch(movieInfoProvider)[widget.movieId];
 
     if (movie == null) {
-      return Scaffold(
-        body: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
 
@@ -68,124 +68,123 @@ class _MovieDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Imagen
-              ClipRRect(
-                borderRadius: BorderRadiusGeometry.circular(20),
-                child: Image.network(movie.posterPath, width: size.width * 0.3),
-              ),
+        //* Titulo, OverView y Rating
+        _TitleAndOverview(movie: movie, size: size, textStyles: textStyles),
 
-              const SizedBox(width: 10),
+        //* Generos de la película
+        _Genres(movie: movie),
 
-              // Descripción
-              SizedBox(
-                width: (size.width - 40) * 0.7,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(movie.title, style: textStyles.titleLarge),
-                    Text(movie.overview),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        //* Actores de la película
+        ActorsByMovie(movieId: movie.id.toString()),
 
-        // Generos de la película
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Wrap(
-            children: [
-              ...movie.genreIds.map(
-                (gender) => Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  child: Chip(
-                    label: Text(gender),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        //* Videos de la película (si tiene)
+        VideosFromMovie(movieId: movie.id),
 
-        _ActorsByMovie(movieId: movie.id.toString()),
-
-        const SizedBox(height: 50),
+        //* Películas similares
+        SimilarMovies(movieId: movie.id),
       ],
     );
   }
 }
 
-class _ActorsByMovie extends ConsumerWidget {
-  final String movieId;
+class _Genres extends StatelessWidget {
+  const _Genres({required this.movie});
 
-  const _ActorsByMovie({required this.movieId});
+  final Movie movie;
 
   @override
-  Widget build(BuildContext context, ref) {
-    final actorsByMovie = ref.watch(actorsByMovieProvider);
-
-    if (actorsByMovie[movieId] == null) {
-      return const CircularProgressIndicator(strokeWidth: 2);
-    }
-
-    final actors = actorsByMovie[movieId]!;
-
-    return SizedBox(
-      height: 300,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: actors.length,
-        itemBuilder: (context, index) {
-          final actor = actors[index];
-
-          return Container(
-            padding: const EdgeInsets.all(8.0),
-            width: 135,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Actor Photo
-                FadeInRight(
-                  child: ClipRRect(
-                    borderRadius: BorderRadiusGeometry.circular(20),
-                    child: Image.network(
-                      actor.profilePath,
-                      height: 180,
-                      width: 135,
-                      fit: BoxFit.cover,
-                    ),
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          alignment: WrapAlignment.center,
+          children: [
+            ...movie.genreIds.map(
+              (gender) => Container(
+                margin: const EdgeInsets.only(right: 10),
+                child: Chip(
+                  label: Text(gender),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-
-                // Nombre
-                const SizedBox(height: 5),
-
-                Text(actor.name, maxLines: 2),
-                Text(
-                  actor.character ?? '',
-                  maxLines: 2,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 }
+
+class _TitleAndOverview extends StatelessWidget {
+  const _TitleAndOverview({
+    required this.movie,
+    required this.size,
+    required this.textStyles,
+  });
+
+  final Movie movie;
+  final Size size;
+  final TextTheme textStyles;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Imagen
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.network(movie.posterPath, width: size.width * 0.3),
+          ),
+
+          const SizedBox(width: 10),
+
+          // Descripción
+          SizedBox(
+            width: (size.width - 40) * 0.7,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(movie.title, style: textStyles.titleLarge),
+                Text(movie.overview),
+
+                const SizedBox(height: 10),
+
+                MovieRating(voteAverage: movie.voteAverage),
+
+                Row(
+                  children: [
+                    const Text(
+                      'Estreno:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(HumanFormats.shortDate(movie.releaseDate)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final isFavoriteProvider = FutureProvider.family.autoDispose((
+  ref,
+  int movieId,
+) {
+  final localStorageRepository = ref.watch(localStorageRepositoryProvider);
+  return localStorageRepository.isFavoriteMovie(movieId);
+});
 
 class _CustomSliverAppBar extends ConsumerWidget {
   final Movie movie;
@@ -194,42 +193,45 @@ class _CustomSliverAppBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isFavoriteFuture = ref.watch(isFavoriteProvider(movie.id));
     final size = MediaQuery.of(context).size;
-    final isFavoriteFuture = ref.watch(isFavoriteMovieProvider(movie.id));
+    final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
     return SliverAppBar(
       backgroundColor: Colors.black,
       expandedHeight: size.height * 0.7,
       foregroundColor: Colors.white,
-
       actions: [
         IconButton(
           onPressed: () async {
-            ref
+            // ref.read(localStorageRepositoryProvider)
+            //   .toggleFavorite(movie);
+            await ref
                 .read(favoriteMoviesProvider.notifier)
                 .toggleFavoriteMovie(movie);
-            ref.invalidate(isFavoriteMovieProvider(movie.id));
+
+            ref.invalidate(isFavoriteProvider(movie.id));
           },
           icon: isFavoriteFuture.when(
+            loading: () => const CircularProgressIndicator(strokeWidth: 2),
             data: (isFavorite) => isFavorite
-                ? const Icon(Icons.favorite, color: Colors.red)
-                : const Icon(Icons.favorite_border_outlined),
-            error: (_, __) =>
-                throw Exception('Error al cargar el estado de favoritos'),
-            loading: () => CircularProgressIndicator(strokeWidth: 2),
+                ? const Icon(Icons.favorite_rounded, color: Colors.red)
+                : const Icon(Icons.favorite_border),
+            error: (_, __) => throw UnimplementedError(),
           ),
-          // icon: const Icon(Icons.favorite_border_outlined),
-          // icon: const Icon(Icons.favorite, color: Colors.red),
+
+          // const Icon( Icons.favorite_border )
+          // icon: const Icon( Icons.favorite_rounded, color: Colors.red )
         ),
       ],
-
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        // title: Text(
-        //   movie.title,
-        //   style: const TextStyle(fontSize: 20, color: Colors.white),
-        //   textAlign: TextAlign.start,
-        // ),
+        titlePadding: const EdgeInsets.only(bottom: 0),
+        title: _CustomGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: const [0.7, 1.0],
+          colors: [Colors.transparent, scaffoldBackgroundColor],
+        ),
         background: Stack(
           children: [
             SizedBox.expand(
@@ -243,27 +245,18 @@ class _CustomSliverAppBar extends ConsumerWidget {
               ),
             ),
 
-            // Sombra al final del poster
-            const _CustomGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.8, 1.0],
-              colors: [Colors.transparent, Colors.black38],
-            ),
-
-            // Sombra del botón de retorno
-            const _CustomGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              stops: [0.0, 0.2],
-              colors: [Colors.black87, Colors.transparent],
-            ),
-
-            // Sombra del botón de favoritos
+            //* Favorite Gradient Background
             const _CustomGradient(
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
-              stops: [0.0, 0.4],
+              stops: [0.0, 0.2],
+              colors: [Colors.black54, Colors.transparent],
+            ),
+
+            //* Back arrow background
+            const _CustomGradient(
+              begin: Alignment.topLeft,
+              stops: [0.0, 0.3],
               colors: [Colors.black87, Colors.transparent],
             ),
           ],
