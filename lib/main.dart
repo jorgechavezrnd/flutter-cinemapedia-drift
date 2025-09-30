@@ -7,8 +7,16 @@ import 'package:cinemapedia/config/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+// import 'package:cinemapedia/config/database/database.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // final deleteQuery = db.delete(db.favoriteMovies);
+  // await deleteQuery.go();
+
+  // final movies = await db.select(db.favoriteMovies).get();
+  // print('movies: $movies');
 
   await dotenv.load(fileName: '.env');
   GoRouter.optionURLReflectsImperativeAPIs = true;
