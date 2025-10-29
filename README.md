@@ -9,3 +9,9 @@
 1. dart run build_runner watch
 2. dart run build_runner build
 ```
+
+# Prod
+Para cambiar el nombre de la aplicación:
+```
+dart run change_app_package_name:main com.jorgechavezrnd.cinemapedia
+```
